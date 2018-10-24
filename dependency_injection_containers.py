@@ -15,13 +15,13 @@ from predicting.predictor.team_blue.team_blue_predictor import TeamBlueStockAPre
     TeamBlueStockBPredictor
 from predicting.predictor.team_green.team_green_predictor import TeamGreenStockAPredictor, \
     TeamGreenStockBPredictor
-from predicting.predictor.team_pink.team_pink_predictor import TeamPinkStockBPredictor, \
-    TeamPinkStockAPredictor
+from predicting.predictor.team_black.team_black_predictor import TeamBlackStockBPredictor, \
+    TeamBlackStockAPredictor
 from predicting.predictor.team_red.team_red_predictor import TeamRedStockBPredictor, \
     TeamRedStockAPredictor
 from trading.trader.team_blue.team_blue_simple_trader import TeamBlueSimpleTrader
 from trading.trader.team_green.team_green_simple_trader import TeamGreenSimpleTrader
-from trading.trader.team_pink.team_pink_simple_trader import TeamPinkSimpleTrader
+from trading.trader.team_black.team_black_simple_trader import TeamBlackSimpleTrader
 from trading.trader.team_red.team_red_simple_trader import TeamRedSimpleTrader
 
 
@@ -47,10 +47,10 @@ class Predictors(containers.DeclarativeContainer):
     TeamGreenStockAPredictor = providers.Factory(TeamGreenStockAPredictor)
     TeamGreenStockBPredictor = providers.Factory(TeamGreenStockBPredictor)
         
-    """Team Pink Predictors"""
+    """Team Black Predictors"""
     # Task 1
-    TeamPinkStockAPredictor = providers.Factory(TeamPinkStockAPredictor)
-    TeamPinkStockBPredictor = providers.Factory(TeamPinkStockBPredictor)
+    TeamBlackStockAPredictor = providers.Factory(TeamBlackStockAPredictor)
+    TeamBlackStockBPredictor = providers.Factory(TeamBlackStockBPredictor)
             
     """Team Red Predictors"""
     # Task 1
@@ -110,19 +110,19 @@ class Traders(containers.DeclarativeContainer):
         stock_b_predictor=Predictors.TeamGreenStockBPredictor
         )
         
-    """Team Pink Traders"""
+    """Team Black Traders"""
     # Task 0
-    TeamPinkSimpleTrader_with_perfect_prediction = providers.Factory(
-        TeamPinkSimpleTrader,
+    TeamBlackSimpleTrader_with_perfect_prediction = providers.Factory(
+        TeamBlackSimpleTrader,
         stock_a_predictor=Predictors.PerfectPredictor_stock_a,
         stock_b_predictor=Predictors.PerfectPredictor_stock_b
         )
     
     # Task 1
-    SimpleTrader_with_team_pink_prediction = providers.Factory(
+    SimpleTrader_with_team_black_prediction = providers.Factory(
         SimpleTrader,
-        stock_a_predictor=Predictors.TeamPinkStockAPredictor,
-        stock_b_predictor=Predictors.TeamPinkStockBPredictor
+        stock_a_predictor=Predictors.TeamBlackStockAPredictor,
+        stock_b_predictor=Predictors.TeamBlackStockBPredictor
         )
             
     """Team Red Traders"""
