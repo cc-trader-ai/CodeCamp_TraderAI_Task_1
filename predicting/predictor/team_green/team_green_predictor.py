@@ -3,6 +3,11 @@ Created on 08.11.2017
 
 @author: rmueller
 """
+from typing import List
+
+import numpy
+from keras.layers import Dense
+
 from model.IPredictor import IPredictor
 
 from model.StockData import StockData
@@ -23,6 +28,12 @@ MODEL_FILE_NAME_STOCK_B = TEAM_NAME + '_predictor_stock_b_network'
 # Neural network configuration -> TODO see Keras Documentation
 INPUT_SIZE = 42  # TODO
 
+BATCH_SIZE = 100
+EPOCHS = 150
+
+WINDOW_SIZE = 35
+HIDDEN_SIZE = 50
+
 
 class TeamGreenBasePredictor(IPredictor):
     """
@@ -40,7 +51,7 @@ class TeamGreenBasePredictor(IPredictor):
         self.model = load_keras_sequential(RELATIVE_PATH, nn_filename)
         assert self.model is not None
 
-        # TODO compile loaded model
+        self.model.compile(loss='mean_squared_error', optimizer='sgd')
 
     def doPredict(self, data: StockData) -> float:
         """
@@ -52,9 +63,11 @@ class TeamGreenBasePredictor(IPredictor):
         Returns:
           predicted next stock value for that company
         """
+        input = numpy.array([data.get_values()[-WINDOW_SIZE:]])
+        output = self.model.predict(input)
 
-        # TODO: extract needed data for neural network and predict result
-        return 0.0
+        print("predicted %f for price %f" % (output[0], data.get_last()[1]))
+        return output[0] + data.get_last()[1]
 
 
 class TeamGreenStockAPredictor(TeamGreenBasePredictor):
@@ -89,7 +102,30 @@ class TeamGreenStockBPredictor(TeamGreenBasePredictor):
 def learn_nn_and_save(training_data: StockData, test_data: StockData, filename_to_save: str):
     network = create_model()
 
-    # TODO: learn network and draw results
+    network.compile(loss='mean_squared_error', optimizer='sgd')
+
+
+    values = training_data.get_values()
+    setCount = len(values) - (WINDOW_SIZE + 1)
+
+
+
+    xtrain = []
+    for element in range(0, setCount):
+        xtrain.append(numpy.array(values[element:WINDOW_SIZE+element]))
+
+    X_TRAIN = numpy.array(xtrain)
+
+    Y_TRAIN = numpy.empty(setCount, dtype=numpy.float)
+
+    offset = WINDOW_SIZE - 1
+    for element in range(0, setCount):
+        current = values[element + offset]
+        next = values[element + offset + 1]
+        Y_TRAIN[element] = 1.0 if next > current else -1.0
+
+    history = network.fit(X_TRAIN, Y_TRAIN, epochs=EPOCHS, batch_size=BATCH_SIZE)
+    draw_history(history)
 
     # Save trained model: separate network structure (stored as JSON) and trained weights (stored as HDF5)
     save_keras_sequential(network, RELATIVE_PATH, filename_to_save)
@@ -98,7 +134,8 @@ def learn_nn_and_save(training_data: StockData, test_data: StockData, filename_t
 def create_model() -> Sequential:
     network = Sequential()
 
-    # TODO: build model
+    network.add(Dense(HIDDEN_SIZE, input_dim=WINDOW_SIZE, activation='relu'))
+    network.add(Dense(1, activation='tanh'))
 
     return network
 
@@ -110,6 +147,8 @@ def draw_history(history: History):
     plt.ylabel('loss')
     plt.xlabel('epoch')
     plt.legend(['training', 'testing'], loc='best')
+
+    plt.show()
 
 
 def draw_prediction(dates: list, awaited_results: list, prediction_results: list):
