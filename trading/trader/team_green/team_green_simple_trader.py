@@ -4,6 +4,7 @@ Created on 08.11.2017
 @author: jtymoszuk
 """
 import math
+from typing import List
 
 from model.CompanyEnum import CompanyEnum
 from model.Portfolio import Portfolio
@@ -24,6 +25,18 @@ class TeamGreenSimpleTrader(ITrader):
         """
         self.stock_a_predictor = stock_a_predictor
         self.stock_b_predictor = stock_b_predictor
+
+    def isVolatile(self, values: List[float]) -> bool:
+        count = 10
+        window = values[-count:]
+        last = None
+        sum = 0
+        for v in window:
+            if last:
+                sum += math.fabs(v / last - 1)
+            last = v
+
+        return sum > (count * 0.01)
 
     def doTrade(self, portfolio: Portfolio, current_portfolio_value: float,
                 stock_market_data: StockMarketData) -> OrderList:
@@ -67,10 +80,16 @@ class TeamGreenSimpleTrader(ITrader):
 
         for b in best:
             prediction = predictions[b]
-            if prediction > 1:
-                current = stock_market_data.get_most_recent_price(b)
-                count = math.floor(currentCash / current)
-                result.buy(b, count)
-                currentCash -= count * current
+            current = stock_market_data.get_most_recent_price(b)
+            wachstum = (prediction / current)
+            vola = self.isVolatile(stock_market_data[b].get_values())
+
+            if wachstum > 1:
+                if vola or wachstum > 1.001:
+                    count = math.floor(currentCash / current)
+                    result.buy(b, count)
+                    currentCash -= count * current
+                else:
+                    result.sell(b, portfolio.get_amount(b))
 
         return result
