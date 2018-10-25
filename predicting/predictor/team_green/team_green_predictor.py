@@ -3,6 +3,8 @@ Created on 08.11.2017
 
 @author: rmueller
 """
+from keras.layers import Dense
+
 from model.IPredictor import IPredictor
 
 from model.StockData import StockData
@@ -22,6 +24,12 @@ MODEL_FILE_NAME_STOCK_B = TEAM_NAME + '_predictor_stock_b_network'
 
 # Neural network configuration -> TODO see Keras Documentation
 INPUT_SIZE = 42  # TODO
+
+BATCH_SIZE = 100
+EPOCHS = 100
+
+WINDOW_SIZE = 30
+HIDDEN_SIZE = 50
 
 
 class TeamGreenBasePredictor(IPredictor):
@@ -89,6 +97,11 @@ class TeamGreenStockBPredictor(TeamGreenBasePredictor):
 def learn_nn_and_save(training_data: StockData, test_data: StockData, filename_to_save: str):
     network = create_model()
 
+
+
+    #network.compile(loss='mean_squared_error', optimizer='sgd')
+    #network.fit(X_TRAIN, Y_TRAIN, epochs=EPOCHS, batch_size=BATCH_SIZE)
+
     # TODO: learn network and draw results
 
     # Save trained model: separate network structure (stored as JSON) and trained weights (stored as HDF5)
@@ -98,7 +111,8 @@ def learn_nn_and_save(training_data: StockData, test_data: StockData, filename_t
 def create_model() -> Sequential:
     network = Sequential()
 
-    # TODO: build model
+    network.add(Dense(HIDDEN_SIZE, input_dim=WINDOW_SIZE, activation='relu'))
+    network.add(Dense(1, activation='tanh'))
 
     return network
 
