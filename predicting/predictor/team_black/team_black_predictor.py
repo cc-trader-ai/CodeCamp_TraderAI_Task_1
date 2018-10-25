@@ -25,7 +25,7 @@ MODEL_FILE_NAME_STOCK_B = TEAM_NAME + '_predictor_stock_b_network'
 # Neural network configuration -> TODO see Keras Documentation
 # INPUT_SIZE = 42  # TODO
 
-MODEL_LENGTH=50
+MODEL_LENGTH=10
 
 
 class TeamBlackBasePredictor(IPredictor):
@@ -163,7 +163,7 @@ def learn_nn_and_save(training_data: StockData, test_data: StockData, filename_t
 
 
     BATCH_SIZE = 100
-    EPOCHS = 5
+    EPOCHS = 50
 
     network.fit(np_xtrain, np_ytrain, epochs=EPOCHS, batch_size=BATCH_SIZE)
 
@@ -216,8 +216,10 @@ def create_model() -> Sequential:
     OUTPUT_SIZE=1
 
     model.add(Dense(HIDDEN_SIZE, input_dim=INPUT_SIZE, activation='tanh'))
-    model.add(Dense(HIDDEN_SIZE, activation='tanh'))
-    model.add(Dense(OUTPUT_SIZE, activation='tanh'))
+    model.add(Dense(HIDDEN_SIZE, activation='relu'))
+    model.add(Dense(HIDDEN_SIZE, activation='relu'))
+    model.add(Dense(HIDDEN_SIZE, activation='relu'))
+    model.add(Dense(OUTPUT_SIZE, activation='linear'))
 
     model.compile(loss='mean_squared_error', optimizer='sgd')
 
