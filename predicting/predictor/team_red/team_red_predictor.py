@@ -24,7 +24,7 @@ MODEL_FILE_NAME_STOCK_A = TEAM_NAME + '_predictor_stock_a_network'
 MODEL_FILE_NAME_STOCK_B = TEAM_NAME + '_predictor_stock_b_network'
 
 INPUT_SIZE = 100
-HIDDEN_SIZE = 500
+HIDDEN_SIZE = 100
 OUTPUT_SIZE = 1
 
 
@@ -44,7 +44,7 @@ class TeamRedBasePredictor(IPredictor):
         self.model = load_keras_sequential(RELATIVE_PATH, nn_filename)
         assert self.model is not None
 
-        self.model.compile(loss='mean_squared_error', optimizer='sgd')
+        self.model.compile(loss='mean_squared_error', optimizer='adam')
 
     def doPredict(self, data: StockData) -> float:
         """
@@ -61,8 +61,6 @@ class TeamRedBasePredictor(IPredictor):
         
         result = self.model.predict(np.array([price_history]))
         predicted_price = result[0][0]
-
-        logger.info("Predicted price: {0}".format(predicted_price))
 
         return predicted_price
 
@@ -107,9 +105,9 @@ def learn_nn_and_save(training_data: StockData, test_data: StockData, filename_t
 
     network = create_model()
 
-    network.compile(loss='mean_squared_error', optimizer='sgd')
+    network.compile(loss='mean_squared_error', optimizer='adam')
 
-    network.fit(price_histories, expected_prices, epochs=10, batch_size=128)
+    network.fit(price_histories, expected_prices, epochs=10)
 
     # Save trained model: separate network structure (stored as JSON) and trained weights (stored as HDF5)
     save_keras_sequential(network, RELATIVE_PATH, filename_to_save)
