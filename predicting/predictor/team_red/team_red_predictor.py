@@ -24,9 +24,20 @@ MODEL_FILE_NAME_STOCK_A = TEAM_NAME + '_predictor_stock_a_network'
 MODEL_FILE_NAME_STOCK_B = TEAM_NAME + '_predictor_stock_b_network'
 
 INPUT_SIZE = 100
-HIDDEN_SIZE = 100
+HIDDEN_SIZE = 50
 OUTPUT_SIZE = 1
 
+def __as_trend(stock_data: StockData):
+    trends = []
+    values = stock_data.get_values()
+    for i in range(1, len(values)):
+        if values[i - 1] < values[i]:
+            trends.append(1)
+        elif values[i - 1] > values[i]:
+            trends.append(-1)
+        else:
+            trends.append(0)
+    return trends
 
 class TeamRedBasePredictor(IPredictor):
     """
@@ -57,13 +68,24 @@ class TeamRedBasePredictor(IPredictor):
           predicted next stock value for that company
         """
 
-        price_history = data.get_values()[-INPUT_SIZE:]
+        price_history = self.as_trend(data)[-INPUT_SIZE:]
         
         result = self.model.predict(np.array([price_history]))
-        predicted_price = result[0][0]
+        predirect_trend = result[0][0]
 
-        return predicted_price
+        return data.get_last()[1] + predirect_trend
 
+    def as_trend(self, stock_data: StockData):
+        trends = []
+        values = stock_data.get_values()
+        for i in range(1, len(values)):
+            if values[i - 1] < values[i]:
+                trends.append(1)
+            elif values[i - 1] > values[i]:
+                trends.append(-1)
+            else:
+                trends.append(0)
+        return trends
 
 class TeamRedStockAPredictor(TeamRedBasePredictor):
     """
@@ -98,7 +120,7 @@ def learn_nn_and_save(training_data: StockData, test_data: StockData, filename_t
     price_histories = []
     expected_prices = []
 
-    training_prices = training_data.get_values()
+    training_prices = __as_trend(training_data)
     for i in range(INPUT_SIZE, len(training_prices)):
         price_histories.append(training_prices[i-INPUT_SIZE:i])
         expected_prices.append(float(training_prices[i]))
@@ -118,10 +140,22 @@ def create_model() -> Sequential:
 
     network.add(Dense(HIDDEN_SIZE, activation='relu', input_dim=INPUT_SIZE))
     network.add(Dense(HIDDEN_SIZE, activation='relu'))
+    network.add(Dense(HIDDEN_SIZE, activation='relu'))
     network.add(Dense(OUTPUT_SIZE, activation='linear'))
 
     return network
 
+def __as_trend(stock_data: StockData):
+    trends = []
+    values = stock_data.get_values()
+    for i in range(1, len(values)):
+        if values[i - 1] < values[i]:
+            trends.append(1)
+        elif values[i - 1] > values[i]:
+            trends.append(-1)
+        else:
+            trends.append(0)
+    return trends
 
 def draw_history(history: History):
     plt.figure()
