@@ -23,9 +23,8 @@ RELATIVE_PATH = 'predicting/predictor/' + TEAM_NAME + '/' + TEAM_NAME + '_predic
 MODEL_FILE_NAME_STOCK_A = TEAM_NAME + '_predictor_stock_a_network'
 MODEL_FILE_NAME_STOCK_B = TEAM_NAME + '_predictor_stock_b_network'
 
-INPUT_SIZE = 100
-HIDDEN_SIZE = 500
-OUTPUT_SIZE = 1
+# Neural network configuration -> TODO see Keras Documentation
+INPUT_SIZE = 42  # TODO
 
 
 class TeamRedBasePredictor(IPredictor):
@@ -44,7 +43,7 @@ class TeamRedBasePredictor(IPredictor):
         self.model = load_keras_sequential(RELATIVE_PATH, nn_filename)
         assert self.model is not None
 
-        self.model.compile(loss='mean_squared_error', optimizer='sgd')
+        # TODO compile loaded model
 
     def doPredict(self, data: StockData) -> float:
         """
@@ -57,14 +56,10 @@ class TeamRedBasePredictor(IPredictor):
           predicted next stock value for that company
         """
 
-        price_history = data.get_values()[-INPUT_SIZE:]
-        
+        price_history = data.get_values()[-3:]
         result = self.model.predict(np.array([price_history]))
-        predicted_price = result[0][0]
-
-        logger.info("Predicted price: {0}".format(predicted_price))
-
-        return predicted_price
+        logger.info("Predicted {0}".format(result))
+        return result
 
 
 class TeamRedStockAPredictor(TeamRedBasePredictor):
@@ -101,8 +96,8 @@ def learn_nn_and_save(training_data: StockData, test_data: StockData, filename_t
     expected_prices = []
 
     training_prices = training_data.get_values()
-    for i in range(INPUT_SIZE, len(training_prices)):
-        price_histories.append(training_prices[i-INPUT_SIZE:i])
+    for i in range(3, len(training_prices)):
+        price_histories.append(training_prices[i-3:i])
         expected_prices.append(float(training_prices[i]))
 
     network = create_model()
@@ -118,7 +113,10 @@ def learn_nn_and_save(training_data: StockData, test_data: StockData, filename_t
 def create_model() -> Sequential:
     network = Sequential()
 
-    network.add(Dense(HIDDEN_SIZE, activation='relu', input_dim=INPUT_SIZE))
+    HIDDEN_SIZE = 5
+    OUTPUT_SIZE = 1
+
+    network.add(Dense(HIDDEN_SIZE, activation='relu', input_dim=3))
     network.add(Dense(HIDDEN_SIZE, activation='relu'))
     network.add(Dense(OUTPUT_SIZE, activation='linear'))
 
