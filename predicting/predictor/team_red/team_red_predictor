@@ -23,21 +23,9 @@ RELATIVE_PATH = 'predicting/predictor/' + TEAM_NAME + '/' + TEAM_NAME + '_predic
 MODEL_FILE_NAME_STOCK_A = TEAM_NAME + '_predictor_stock_a_network'
 MODEL_FILE_NAME_STOCK_B = TEAM_NAME + '_predictor_stock_b_network'
 
-INPUT_SIZE = 100
-HIDDEN_SIZE = 50
-OUTPUT_SIZE = 1
+# Neural network configuration -> TODO see Keras Documentation
+INPUT_SIZE = 42  # TODO
 
-def __as_trend(stock_data: StockData):
-    trends = []
-    values = stock_data.get_values()
-    for i in range(1, len(values)):
-        if values[i - 1] < values[i]:
-            trends.append(1)
-        elif values[i - 1] > values[i]:
-            trends.append(-1)
-        else:
-            trends.append(0)
-    return trends
 
 class TeamRedBasePredictor(IPredictor):
     """
@@ -55,7 +43,7 @@ class TeamRedBasePredictor(IPredictor):
         self.model = load_keras_sequential(RELATIVE_PATH, nn_filename)
         assert self.model is not None
 
-        self.model.compile(loss='mean_squared_error', optimizer='adam')
+        # TODO compile loaded model
 
     def doPredict(self, data: StockData) -> float:
         """
@@ -68,24 +56,11 @@ class TeamRedBasePredictor(IPredictor):
           predicted next stock value for that company
         """
 
-        price_history = self.as_trend(data)[-INPUT_SIZE:]
-        
+        price_history = data.get_values()[-3:]
         result = self.model.predict(np.array([price_history]))
-        predirect_trend = result[0][0]
+        logger.info("Predicted {0}".format(result))
+        return result
 
-        return data.get_last()[1] + predirect_trend
-
-    def as_trend(self, stock_data: StockData):
-        trends = []
-        values = stock_data.get_values()
-        for i in range(1, len(values)):
-            if values[i - 1] < values[i]:
-                trends.append(1)
-            elif values[i - 1] > values[i]:
-                trends.append(-1)
-            else:
-                trends.append(0)
-        return trends
 
 class TeamRedStockAPredictor(TeamRedBasePredictor):
     """
@@ -120,16 +95,16 @@ def learn_nn_and_save(training_data: StockData, test_data: StockData, filename_t
     price_histories = []
     expected_prices = []
 
-    training_prices = __as_trend(training_data)
-    for i in range(INPUT_SIZE, len(training_prices)):
-        price_histories.append(training_prices[i-INPUT_SIZE:i])
+    training_prices = training_data.get_values()
+    for i in range(3, len(training_prices)):
+        price_histories.append(training_prices[i-3:i])
         expected_prices.append(float(training_prices[i]))
 
     network = create_model()
 
-    network.compile(loss='mean_squared_error', optimizer='adam')
+    network.compile(loss='mean_squared_error', optimizer='sgd')
 
-    network.fit(price_histories, expected_prices, epochs=10)
+    network.fit(price_histories, expected_prices, epochs=10, batch_size=128)
 
     # Save trained model: separate network structure (stored as JSON) and trained weights (stored as HDF5)
     save_keras_sequential(network, RELATIVE_PATH, filename_to_save)
@@ -138,24 +113,15 @@ def learn_nn_and_save(training_data: StockData, test_data: StockData, filename_t
 def create_model() -> Sequential:
     network = Sequential()
 
-    network.add(Dense(HIDDEN_SIZE, activation='tanh', input_dim=INPUT_SIZE))
-    network.add(Dense(HIDDEN_SIZE, activation='tanh'))
-    network.add(Dense(HIDDEN_SIZE, activation='tanh'))
+    HIDDEN_SIZE = 5
+    OUTPUT_SIZE = 1
+
+    network.add(Dense(HIDDEN_SIZE, activation='relu', input_dim=3))
+    network.add(Dense(HIDDEN_SIZE, activation='relu'))
     network.add(Dense(OUTPUT_SIZE, activation='linear'))
 
     return network
 
-def __as_trend(stock_data: StockData):
-    trends = []
-    values = stock_data.get_values()
-    for i in range(1, len(values)):
-        if values[i - 1] < values[i]:
-            trends.append(1)
-        elif values[i - 1] > values[i]:
-            trends.append(-1)
-        else:
-            trends.append(0)
-    return trends
 
 def draw_history(history: History):
     plt.figure()

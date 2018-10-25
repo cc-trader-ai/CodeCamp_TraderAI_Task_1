@@ -18,7 +18,7 @@ if __name__ == "__main__":
         ('Buy-and-hold Trader', Traders.BuyAndHoldTrader()),
 
         # Simple traders
-        ('Simple Trader (perfect prediction)', Traders.SimpleTrader_with_perfect_prediction()),
+        # ('Simple Trader (perfect prediction)', Traders.SimpleTrader_with_perfect_prediction()),
          
         # Code-Camp Task 0 traders
         ('Team Blue Simple Trader (perfect prediction)', Traders.TeamBlueSimpleTrader_with_perfect_prediction()),
