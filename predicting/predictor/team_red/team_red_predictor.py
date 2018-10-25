@@ -27,18 +27,6 @@ INPUT_SIZE = 100
 HIDDEN_SIZE = 50
 OUTPUT_SIZE = 1
 
-def __as_trend(stock_data: StockData):
-    trends = []
-    values = stock_data.get_values()
-    for i in range(1, len(values)):
-        if values[i - 1] < values[i]:
-            trends.append(1)
-        elif values[i - 1] > values[i]:
-            trends.append(-1)
-        else:
-            trends.append(0)
-    return trends
-
 class TeamRedBasePredictor(IPredictor):
     """
     Predictor based on an already trained neural network.
