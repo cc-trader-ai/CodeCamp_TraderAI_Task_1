@@ -3,6 +3,9 @@ Created on 08.11.2017
 
 @author: rmueller
 """
+from typing import List
+
+import numpy
 from keras.layers import Dense
 
 from model.IPredictor import IPredictor
@@ -48,7 +51,7 @@ class TeamGreenBasePredictor(IPredictor):
         self.model = load_keras_sequential(RELATIVE_PATH, nn_filename)
         assert self.model is not None
 
-        # TODO compile loaded model
+        self.model.compile(loss='mean_squared_error', optimizer='sgd')
 
     def doPredict(self, data: StockData) -> float:
         """
@@ -60,6 +63,7 @@ class TeamGreenBasePredictor(IPredictor):
         Returns:
           predicted next stock value for that company
         """
+        self.model.predict(...)
 
         # TODO: extract needed data for neural network and predict result
         return 0.0
@@ -99,10 +103,29 @@ def learn_nn_and_save(training_data: StockData, test_data: StockData, filename_t
 
 
 
-    #network.compile(loss='mean_squared_error', optimizer='sgd')
-    #network.fit(X_TRAIN, Y_TRAIN, epochs=EPOCHS, batch_size=BATCH_SIZE)
+    network.compile(loss='mean_squared_error', optimizer='sgd')
 
-    # TODO: learn network and draw results
+
+    values = training_data.get_values()
+    setCount = len(values) - (WINDOW_SIZE + 1)
+
+
+    Y_TRAIN = numpy.empty(setCount, dtype=numpy.float)
+
+    xtrain = []
+    for element in range(0, setCount):
+        xtrain.append(numpy.array(values[element:WINDOW_SIZE+element]))
+
+    X_TRAIN = numpy.array(xtrain)
+
+    current = values[WINDOW_SIZE]
+    for element in range(0, setCount):
+        next = values[element + 1 + WINDOW_SIZE]
+        Y_TRAIN[element] = 1.0 if next > current else -1.0
+        current = element
+
+    history = network.fit(X_TRAIN, Y_TRAIN, epochs=EPOCHS, batch_size=BATCH_SIZE)
+    draw_history(history)
 
     # Save trained model: separate network structure (stored as JSON) and trained weights (stored as HDF5)
     save_keras_sequential(network, RELATIVE_PATH, filename_to_save)
@@ -124,6 +147,8 @@ def draw_history(history: History):
     plt.ylabel('loss')
     plt.xlabel('epoch')
     plt.legend(['training', 'testing'], loc='best')
+
+    plt.show()
 
 
 def draw_prediction(dates: list, awaited_results: list, prediction_results: list):
