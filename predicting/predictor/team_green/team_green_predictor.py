@@ -29,9 +29,9 @@ MODEL_FILE_NAME_STOCK_B = TEAM_NAME + '_predictor_stock_b_network'
 INPUT_SIZE = 42  # TODO
 
 BATCH_SIZE = 100
-EPOCHS = 1000
+EPOCHS = 150
 
-WINDOW_SIZE = 50
+WINDOW_SIZE = 35
 HIDDEN_SIZE = 50
 
 
@@ -117,11 +117,12 @@ def learn_nn_and_save(training_data: StockData, test_data: StockData, filename_t
     X_TRAIN = numpy.array(xtrain)
 
     Y_TRAIN = numpy.empty(setCount, dtype=numpy.float)
-    current = values[WINDOW_SIZE]
+
+    offset = WINDOW_SIZE - 1
     for element in range(0, setCount):
-        next = values[element + 1 + WINDOW_SIZE]
+        current = values[element + offset]
+        next = values[element + offset + 1]
         Y_TRAIN[element] = 1.0 if next > current else -1.0
-        current = values[element]
 
     history = network.fit(X_TRAIN, Y_TRAIN, epochs=EPOCHS, batch_size=BATCH_SIZE)
     draw_history(history)
