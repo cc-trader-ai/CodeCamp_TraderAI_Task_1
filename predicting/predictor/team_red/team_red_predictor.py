@@ -138,9 +138,9 @@ def learn_nn_and_save(training_data: StockData, test_data: StockData, filename_t
 def create_model() -> Sequential:
     network = Sequential()
 
-    network.add(Dense(HIDDEN_SIZE, activation='relu', input_dim=INPUT_SIZE))
-    network.add(Dense(HIDDEN_SIZE, activation='relu'))
-    network.add(Dense(HIDDEN_SIZE, activation='relu'))
+    network.add(Dense(HIDDEN_SIZE, activation='tanh', input_dim=INPUT_SIZE))
+    network.add(Dense(HIDDEN_SIZE, activation='tanh'))
+    network.add(Dense(HIDDEN_SIZE, activation='tanh'))
     network.add(Dense(OUTPUT_SIZE, activation='linear'))
 
     return network
