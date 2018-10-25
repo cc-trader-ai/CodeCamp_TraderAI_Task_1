@@ -63,10 +63,11 @@ class TeamGreenBasePredictor(IPredictor):
         Returns:
           predicted next stock value for that company
         """
-        self.model.predict(...)
+        input = numpy.array([data.get_values()[-WINDOW_SIZE:]])
+        output = self.model.predict(input)
 
-        # TODO: extract needed data for neural network and predict result
-        return 0.0
+        print("predicted %f for price %f" % (output[0], data.get_last()[1]))
+        return output[0] + data.get_last()[1]
 
 
 class TeamGreenStockAPredictor(TeamGreenBasePredictor):
