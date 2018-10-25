@@ -38,6 +38,7 @@ class TeamGreenSimpleTrader(ITrader):
         Returns:
           A OrderList instance, may be empty never None
         """
+
         result = OrderList()
 
         predictions = {
@@ -60,20 +61,16 @@ class TeamGreenSimpleTrader(ITrader):
                 if current > prediction:
                     result.sell(company, anzahl)
 
-        bestCompany = None
-        bestZuwachs = 1
-        for company in CompanyEnum:
-            if zuwachs[company] > bestZuwachs:
-                bestZuwachs = zuwachs[company]
-                bestCompany = company
+        best = sorted(zuwachs, key=zuwachs.__getitem__)[::-1]
 
-        if bestCompany:
-            current = stock_market_data.get_most_recent_price(company)
-            count = math.floor(portfolio.cash / current)
-            result.buy(bestCompany, count)
+        currentCash = portfolio.cash
 
-
-
-        # TODO: implement trading logic
+        for b in best:
+            prediction = predictions[b]
+            if prediction > 1:
+                current = stock_market_data.get_most_recent_price(b)
+                count = math.floor(currentCash / current)
+                result.buy(b, count)
+                currentCash -= count * current
 
         return result
