@@ -5,6 +5,8 @@ Created on 08.11.2017
 """
 from model.IPredictor import IPredictor
 
+import numpy as np
+
 from model.StockData import StockData
 from utils import load_keras_sequential, save_keras_sequential, read_stock_market_data
 from model.CompanyEnum import CompanyEnum
@@ -53,8 +55,12 @@ class TeamRedBasePredictor(IPredictor):
           predicted next stock value for that company
         """
 
-        # TODO: extract needed data for neural network and predict result
-        return 0.0
+        price_history = data.get_values()[-3:]
+        logger.info("Evaluating price history: {0}".format(price_history))
+        result = self.model.predict(np.array([price_history]))
+        logger.info("Predicted price: {0}".format(result))
+
+        return result
 
 
 class TeamRedStockAPredictor(TeamRedBasePredictor):
@@ -87,9 +93,19 @@ class TeamRedStockBPredictor(TeamRedBasePredictor):
 
 
 def learn_nn_and_save(training_data: StockData, test_data: StockData, filename_to_save: str):
+    price_histories = []
+    expected_prices = []
+
+    training_prices = training_data.get_values()
+    for i in range(3, len(training_prices)):
+        price_histories.append(training_prices[i-3:i-1])
+        expected_prices.append(float(training_prices[i]))
+
     network = create_model()
 
-    # TODO: learn network and draw results
+    network.compile(loss='mean_squared_error', optimizer='sgd')
+
+    network.fit(price_histories, expected_prices, epochs=10, batch_size=128)
 
     # Save trained model: separate network structure (stored as JSON) and trained weights (stored as HDF5)
     save_keras_sequential(network, RELATIVE_PATH, filename_to_save)
@@ -98,7 +114,12 @@ def learn_nn_and_save(training_data: StockData, test_data: StockData, filename_t
 def create_model() -> Sequential:
     network = Sequential()
 
-    # TODO: build model
+    HIDDEN_SIZE = 5
+    OUTPUT_SIZE = 1
+
+    model.add(Dense(HIDDEN_SIZE, activation='relu', input_dim=3))
+    model.add(Dense(HIDDEN_SIZE, activation='relu'))
+    model.add(Dense(OUTPUT_SIZE, activation='linear'))
 
     return network
 
