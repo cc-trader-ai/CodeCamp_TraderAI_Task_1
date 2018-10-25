@@ -29,9 +29,9 @@ MODEL_FILE_NAME_STOCK_B = TEAM_NAME + '_predictor_stock_b_network'
 INPUT_SIZE = 42  # TODO
 
 BATCH_SIZE = 100
-EPOCHS = 100
+EPOCHS = 1000
 
-WINDOW_SIZE = 30
+WINDOW_SIZE = 50
 HIDDEN_SIZE = 50
 
 
@@ -102,8 +102,6 @@ class TeamGreenStockBPredictor(TeamGreenBasePredictor):
 def learn_nn_and_save(training_data: StockData, test_data: StockData, filename_to_save: str):
     network = create_model()
 
-
-
     network.compile(loss='mean_squared_error', optimizer='sgd')
 
 
@@ -111,7 +109,6 @@ def learn_nn_and_save(training_data: StockData, test_data: StockData, filename_t
     setCount = len(values) - (WINDOW_SIZE + 1)
 
 
-    Y_TRAIN = numpy.empty(setCount, dtype=numpy.float)
 
     xtrain = []
     for element in range(0, setCount):
@@ -119,11 +116,12 @@ def learn_nn_and_save(training_data: StockData, test_data: StockData, filename_t
 
     X_TRAIN = numpy.array(xtrain)
 
+    Y_TRAIN = numpy.empty(setCount, dtype=numpy.float)
     current = values[WINDOW_SIZE]
     for element in range(0, setCount):
         next = values[element + 1 + WINDOW_SIZE]
         Y_TRAIN[element] = 1.0 if next > current else -1.0
-        current = element
+        current = values[element]
 
     history = network.fit(X_TRAIN, Y_TRAIN, epochs=EPOCHS, batch_size=BATCH_SIZE)
     draw_history(history)
