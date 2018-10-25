@@ -3,6 +3,9 @@ Created on 08.11.2017
 
 @author: jtymoszuk
 """
+import math
+
+from model.CompanyEnum import CompanyEnum
 from model.Portfolio import Portfolio
 from model.StockMarketData import StockMarketData
 from model.ITrader import ITrader
@@ -35,8 +38,41 @@ class TeamGreenSimpleTrader(ITrader):
         Returns:
           A OrderList instance, may be empty never None
         """
-
         result = OrderList()
+
+        predictions = {
+            CompanyEnum.COMPANY_A: self.stock_a_predictor.doPredict(stock_market_data[CompanyEnum.COMPANY_A]),
+            CompanyEnum.COMPANY_B: self.stock_b_predictor.doPredict(stock_market_data[CompanyEnum.COMPANY_B])
+        }
+
+        zuwachs = {}
+
+        # sell companies which get worse
+        for company in CompanyEnum:
+            prediction = predictions[company]
+            anzahl = portfolio.get_amount(company)
+            current = stock_market_data.get_most_recent_price(company)
+
+            zuwachs[company] = prediction / current
+
+            # sell if getting worse
+            if anzahl > 0:
+                if current > prediction:
+                    result.sell(company, anzahl)
+
+        bestCompany = None
+        bestZuwachs = 1
+        for company in CompanyEnum:
+            if zuwachs[company] > bestZuwachs:
+                bestZuwachs = zuwachs[company]
+                bestCompany = company
+
+        if bestCompany:
+            current = stock_market_data.get_most_recent_price(company)
+            count = math.floor(portfolio.cash / current)
+            result.buy(bestCompany, count)
+
+
 
         # TODO: implement trading logic
 
