@@ -13,6 +13,8 @@ from matplotlib import pyplot as plt
 from keras.models import Sequential
 from definitions import PERIOD_1, PERIOD_2
 from keras.callbacks import History
+from keras.layers import Dense
+import numpy as np
 
 TEAM_NAME = "team_black"
 
@@ -21,7 +23,9 @@ MODEL_FILE_NAME_STOCK_A = TEAM_NAME + '_predictor_stock_a_network'
 MODEL_FILE_NAME_STOCK_B = TEAM_NAME + '_predictor_stock_b_network'
 
 # Neural network configuration -> TODO see Keras Documentation
-INPUT_SIZE = 42  # TODO
+# INPUT_SIZE = 42  # TODO
+
+MODEL_LENGTH=50
 
 
 class TeamBlackBasePredictor(IPredictor):
@@ -40,7 +44,9 @@ class TeamBlackBasePredictor(IPredictor):
         self.model = load_keras_sequential(RELATIVE_PATH, nn_filename)
         assert self.model is not None
 
-        # TODO compile loaded model
+        # TODO DONE compile loaded model
+        self.model.compile(loss='mean_squared_error', optimizer='sgd')
+
 
     def doPredict(self, data: StockData) -> float:
         """
@@ -53,8 +59,40 @@ class TeamBlackBasePredictor(IPredictor):
           predicted next stock value for that company
         """
 
-        # TODO: extract needed data for neural network and predict result
-        return 0.0
+        # self.model.predict_classes
+
+        stocks = data.get_values()
+        length = len(stocks)
+
+        last = stocks[length - (MODEL_LENGTH + 1):]
+
+        xtrain = []
+
+        tuple = []
+        for j in range(MODEL_LENGTH):
+            increase = (last[j + 1] - last[j]) / last[j]
+            if increase > 1:
+                increase = 1
+
+            if increase < -1:
+                increase = -1
+
+            tuple.append(increase)
+
+        xtrain.append(tuple)
+
+
+        np_xtrain = np.array(xtrain)
+
+        result = self.model.predict(np_xtrain)
+
+
+        value = result[0][0]
+
+
+        absolute_last = data.get_values()[-1]
+        return absolute_last + absolute_last * value
+
 
 
 class TeamBlackStockAPredictor(TeamBlackBasePredictor):
@@ -89,18 +127,101 @@ class TeamBlackStockBPredictor(TeamBlackBasePredictor):
 def learn_nn_and_save(training_data: StockData, test_data: StockData, filename_to_save: str):
     network = create_model()
 
-    # TODO: learn network and draw results
+    stocks = training_data.get_values()
+
+    xtrain = []
+    ytrain = []
+
+    for i in range(len(stocks) - (MODEL_LENGTH + 2)):
+        tuple = []
+        for j in range(MODEL_LENGTH):
+            increase = (stocks[i + j + 1] - stocks[i + j]) / stocks[i + j]
+            if increase > 1:
+                increase = 1
+
+            if increase < -1:
+                increase = -1
+
+            tuple.append(increase)
+
+        xtrain.append(tuple)
+
+        j = MODEL_LENGTH
+        increase = (stocks[i + j + 1] - stocks[i + j]) / stocks[i + j]
+        if increase > 1:
+            increase = 1
+
+        if increase < -1:
+            increase = -1
+
+        tuple2 = []
+        tuple2.append(increase)
+        ytrain.append(tuple2)
+
+    np_xtrain = np.array(xtrain)
+    np_ytrain = np.array(ytrain)
+
+
+    BATCH_SIZE = 100
+    EPOCHS = 5
+
+    network.fit(np_xtrain, np_ytrain, epochs=EPOCHS, batch_size=BATCH_SIZE)
+
+
+    stocks = test_data.get_values()
+
+    xtrain = []
+    ytrain = []
+
+    for i in range(len(stocks) - (MODEL_LENGTH + 2)):
+        tuple = []
+        for j in range(MODEL_LENGTH):
+            increase = (stocks[i + j + 1] - stocks[i + j]) / stocks[i + j]
+            if increase > 1:
+                increase = 1
+
+            if increase < -1:
+                increase = -1
+
+            tuple.append(increase)
+
+        xtrain.append(tuple)
+
+        j = MODEL_LENGTH
+        increase = (stocks[i + j + 1] - stocks[i + j]) / stocks[i + j]
+        if increase > 1:
+            increase = 1
+
+        if increase < -1:
+            increase = -1
+
+        tuple2 = []
+        tuple2.append(increase)
+        ytrain.append(tuple2)
+
+    np_xtrain = np.array(xtrain)
+    np_ytrain = np.array(ytrain)
+
+    score = network.evaluate(np_xtrain, np_ytrain, batch_size=BATCH_SIZE)
 
     # Save trained model: separate network structure (stored as JSON) and trained weights (stored as HDF5)
     save_keras_sequential(network, RELATIVE_PATH, filename_to_save)
 
 
 def create_model() -> Sequential:
-    network = Sequential()
+    model = Sequential()
 
-    # TODO: build model
+    HIDDEN_SIZE=MODEL_LENGTH - 1
+    INPUT_SIZE=MODEL_LENGTH
+    OUTPUT_SIZE=1
 
-    return network
+    model.add(Dense(HIDDEN_SIZE, input_dim=INPUT_SIZE, activation='tanh'))
+    model.add(Dense(HIDDEN_SIZE, activation='tanh'))
+    model.add(Dense(OUTPUT_SIZE, activation='tanh'))
+
+    model.compile(loss='mean_squared_error', optimizer='sgd')
+
+    return model
 
 
 def draw_history(history: History):
