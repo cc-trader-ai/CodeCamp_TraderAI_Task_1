@@ -3,6 +3,8 @@ Created on 08.11.2017
 
 @author: rmueller
 """
+from keras.layers import Dense
+
 from model.IPredictor import IPredictor
 
 from model.StockData import StockData
@@ -13,6 +15,7 @@ from matplotlib import pyplot as plt
 from keras.models import Sequential
 from definitions import PERIOD_1, PERIOD_2
 from keras.callbacks import History
+import numpy as np
 
 TEAM_NAME = "team_blue"
 
@@ -52,9 +55,24 @@ class TeamBlueBasePredictor(IPredictor):
         Returns:
           predicted next stock value for that company
         """
+        #self.model.compile(loss='mean_squared_error', optimizer='sgd')
+        tmp_data = data.get_from_offset(data.get_row_count() - 5)
+        tmp = np.array([[tmp_data[0][1], tmp_data[1][1], tmp_data[2][1], tmp_data[3][1], tmp_data[4][1]]])
+
+
+        pred = self.model.predict(tmp)
+
+
+        res = data.get_last()[1];
+
+        if (pred <= 0.5):
+            res = res * 0.9;
+        else:
+            res = res * 1.1
+
 
         # TODO: extract needed data for neural network and predict result
-        return 0.0
+        return res
 
 
 class TeamBlueStockAPredictor(TeamBlueBasePredictor):
@@ -91,6 +109,46 @@ def learn_nn_and_save(training_data: StockData, test_data: StockData, filename_t
 
     # TODO: learn network and draw results
 
+    #np.append([[1, 2, 3], [4, 5, 6]], [7, 8, 9], axis=0)
+
+    x_train = np.array([]);
+    y_train = np.array([]);
+
+    i = 0
+    batch = 5
+    while i < training_data.get_row_count()-batch:
+        tmp = np.array([]);
+        for j in range(0, batch):
+            i = i + 1;
+            diff = training_data.get(i)[1] - training_data.get(i + 1)[1]
+            tmp = np.insert(tmp, j, diff)
+
+        diff_y = 0;
+        if (i < training_data.get_row_count() - 1):
+            diff_y = training_data.get(i - 1)[1] - training_data.get(i)[1]
+
+        if (diff_y > 0):
+            y_train = np.append(y_train, 1)
+        else:
+            y_train = np.append(y_train, 0)
+
+        x_train = np.append(x_train, tmp, axis=0);
+
+    x_train = x_train.reshape((int(x_train.shape[0]/5),5));
+    y_train = y_train.reshape((-1, 1));
+
+    #for i in range(0, training_data.get_row_count() - 1):
+    #    diff = training_data.get(i)[1] - training_data.get(i + 1)[1]
+
+    #    if (diff < 0):
+    #        y_train.append([1])
+    #    else:
+    #        y_train.append([0])
+
+
+    network.compile(loss='mean_squared_error', optimizer='sgd')
+    network.fit(x_train, y_train , epochs=10, batch_size=5)
+
     # Save trained model: separate network structure (stored as JSON) and trained weights (stored as HDF5)
     save_keras_sequential(network, RELATIVE_PATH, filename_to_save)
 
@@ -99,6 +157,12 @@ def create_model() -> Sequential:
     network = Sequential()
 
     # TODO: build model
+
+    network.add(Dense(5, input_dim=5, activation='relu'))
+    #network.add(Dense(5, activation='relu'))
+    network.add(Dense(1, activation='sigmoid'))
+    network.compile(loss='mean_squared_error', optimizer='sgd')
+
 
     return network
 
